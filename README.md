@@ -1,2 +1,2 @@
-# nastya_bot
+# antonovskie_apples_bot
 Antonovskie🍏 Apples🍎
