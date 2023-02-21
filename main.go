@@ -1,41 +1,62 @@
 package main
 
 import (
+	"antonovskie_apples_bot/handler"
+	"antonovskie_apples_bot/tgclient"
 	"fmt"
 	"log"
 	"os"
-
-	"antonovskie_apples_bot/tgclient"
+	"sync"
 
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	fmt.Println("Hello, 🍎🍏❤️")
-	initEnv()
+	start()
 
-	ch := make(chan interface{})
+	ch := make(chan any)
 	bot := initBot()
 
-	bot.GetMe(ch)
-	response := <-ch
+	collectBotInfo(bot, ch)
+	listenUpdates(bot, ch)
+}
 
-	switch p := response.(type) {
-	case *tgclient.Response[tgclient.GetMeResponse]:
-		fmt.Println(p.Result.Firstname)
-		fmt.Println(*p.Result.Username)
-	}
+func start() {
+	fmt.Println("Hello, 🍎🍏❤️")
+	fmt.Printf("Starting bot...\n\n")
+
+	initEnv()
 }
 
 func initEnv() {
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatal(fmt.Sprintf("Error loading .env file %s", err))
+		log.Fatalln(err)
 	}
 }
 
-func initBot() tgclient.Client {
+func initBot() tgclient.TelegramBot {
 	token := os.Getenv("TG_BOT_TOKEN")
 
 	return tgclient.TelegramBot{Token: token}
+}
+
+func collectBotInfo(bot tgclient.Client, ch chan any) {
+	bot.GetMe(ch)
+	handler.HandleGetMeResponse(ch)
+
+	fmt.Printf("\nBot is ready to handle connections! :)\n\n")
+}
+
+func listenUpdates(bot tgclient.TelegramBot, ch chan any) {
+	var wg sync.WaitGroup
+
+	for {
+		wg.Add(1)
+
+		bot.GetUpdates(ch, &wg)
+		handler.HandleUpdateResponse(&bot, ch)
+
+		wg.Wait()
+	}
 }

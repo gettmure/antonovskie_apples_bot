@@ -1,52 +1,41 @@
 package tgclient
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
+	"sync"
 )
 
 type Client interface {
-	GetMe(ch chan interface{}) // https://core.telegram.org/bots/api#getme
+	GetMe(ch chan any)                          // https://core.telegram.org/bots/api#getme
+	GetUpdates(ch chan any, wg *sync.WaitGroup) // https://core.telegram.org/bots/api#getupdates
 }
 
 type TelegramBot struct {
-	Token string // https://core.telegram.org/bots/api#authorizing-your-bot
+	Token        string // https://core.telegram.org/bots/api#authorizing-your-bot
+	LastUpdateId *int64
 }
 
-func (client TelegramBot) GetMe(ch chan interface{}) {
+func (client TelegramBot) GetMe(ch chan any) {
 	go func() {
-		response, err := sendRequest[GetMeResponse](client.Token, "getMe")
+		response, err := sendRequest[GetMeResponse](client.Token, "getMe", nil)
 		if err != nil {
-			log.Fatalln(fmt.Sprintf("Error fetching response for getMe method: %s", err))
+			log.Println(err)
 		}
 
 		ch <- response
 	}()
 }
 
-func sendRequest[T Fetchable](token string, method ApiMethod) (*Response[T], error) {
-	url := getApiUrl(token, method)
+func (client TelegramBot) GetUpdates(ch chan any, wg *sync.WaitGroup) {
+	go func() {
+		defer wg.Done()
 
-	response, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
+		query := map[string]string{"offset": "-1"}
+		response, err := sendRequest[GetUpdatesResponse](client.Token, "getUpdates", &query)
+		if err != nil {
+			log.Println(err)
+		}
 
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var data Response[T]
-	json.Unmarshal(body, &data)
-
-	return &data, nil
-}
-
-func getApiUrl(token string, method ApiMethod) string {
-	return fmt.Sprintf("https://api.telegram.org/bot%s/%s", token, method)
+		ch <- response
+	}()
 }
