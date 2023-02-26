@@ -1,41 +1,51 @@
 package tgclient
 
 import (
+	"context"
 	"log"
 	"sync"
+	"time"
 )
 
-type Client interface {
-	GetMe(ch chan any)                          // https://core.telegram.org/bots/api#getme
-	GetUpdates(ch chan any, wg *sync.WaitGroup) // https://core.telegram.org/bots/api#getupdates
+type TelegramBot interface {
+	ListenUpdates(ctx context.Context, wg *sync.WaitGroup)
 }
 
-type TelegramBot struct {
-	Token        string // https://core.telegram.org/bots/api#authorizing-your-bot
-	LastUpdateId *int64
+type telegramBot struct {
+	token        string // https://core.telegram.org/bots/api#authorizing-your-bot
+	lastUpdateId int64
+	client       ApiClient
 }
 
-func (client TelegramBot) GetMe(ch chan any) {
-	go func() {
-		response, err := sendRequest[GetMeResponse](client.Token, "getMe", nil)
-		if err != nil {
-			log.Println(err)
+func InitBot(token string, apiClient ApiClient) (TelegramBot, error) {
+	bot := &telegramBot{token: token, lastUpdateId: -1, client: apiClient}
+
+	_, err := bot.client.GetMe(bot.token)
+	if err != nil {
+		return nil, err
+	}
+
+	return bot, nil
+}
+
+func (bot *telegramBot) ListenUpdates(ctx context.Context, wg *sync.WaitGroup) {
+	defer wg.Done()
+	ticker := time.NewTicker(5 * time.Second)
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("Graceful shutdown")
+
+			return
+		case <-ticker.C:
+			updates, err := bot.client.GetUpdates(bot.token, -1)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			handleUpdateResponse(&bot.lastUpdateId, updates)
 		}
-
-		ch <- response
-	}()
-}
-
-func (client TelegramBot) GetUpdates(ch chan any, wg *sync.WaitGroup) {
-	go func() {
-		defer wg.Done()
-
-		query := map[string]string{"offset": "-1"}
-		response, err := sendRequest[GetUpdatesResponse](client.Token, "getUpdates", &query)
-		if err != nil {
-			log.Println(err)
-		}
-
-		ch <- response
-	}()
+	}
 }

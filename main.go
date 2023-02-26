@@ -1,24 +1,45 @@
 package main
 
 import (
-	"antonovskie_apples_bot/handler"
 	"antonovskie_apples_bot/tgclient"
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/recoilme/graceful"
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	quit := make(chan os.Signal, 1)
+	graceful.Unignore(quit, func() error {
+		cancel()
+		time.Sleep(1 * time.Second)
+
+		return nil
+	}, graceful.Terminate...)
+
 	start()
 
-	ch := make(chan any)
-	bot := initBot()
+	token := os.Getenv("TG_BOT_TOKEN")
+	if len(token) < 1 {
+		log.Fatalln("Empty token")
+	}
 
-	collectBotInfo(bot, ch)
-	listenUpdates(bot, ch)
+	client := tgclient.InitClient()
+	bot, err := tgclient.InitBot(token, client)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	bot.ListenUpdates(ctx, &wg)
+	wg.Wait()
 }
 
 func start() {
@@ -32,31 +53,5 @@ func initEnv() {
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalln(err)
-	}
-}
-
-func initBot() tgclient.TelegramBot {
-	token := os.Getenv("TG_BOT_TOKEN")
-
-	return tgclient.TelegramBot{Token: token}
-}
-
-func collectBotInfo(bot tgclient.Client, ch chan any) {
-	bot.GetMe(ch)
-	handler.HandleGetMeResponse(ch)
-
-	fmt.Printf("\nBot is ready to handle connections! :)\n\n")
-}
-
-func listenUpdates(bot tgclient.TelegramBot, ch chan any) {
-	var wg sync.WaitGroup
-
-	for {
-		wg.Add(1)
-
-		bot.GetUpdates(ch, &wg)
-		handler.HandleUpdateResponse(&bot, ch)
-
-		wg.Wait()
 	}
 }
