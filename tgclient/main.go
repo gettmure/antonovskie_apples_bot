@@ -1,6 +1,7 @@
 package tgclient
 
 import (
+	"antonovskie_apples_bot/complimentr"
 	"context"
 	"log"
 	"sync"
@@ -33,6 +34,9 @@ func (bot *telegramBot) ListenUpdates(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	ticker := time.NewTicker(5 * time.Second)
 
+	complimentrClient := complimentr.InitClient()
+	complimentr := complimentr.InitComplimentr(complimentrClient)
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -47,7 +51,7 @@ func (bot *telegramBot) ListenUpdates(ctx context.Context, wg *sync.WaitGroup) {
 			}
 
 			for _, update := range response.Result {
-				handleUpdateResponse(bot, update)
+				handleUpdateResponse(bot, complimentr, update)
 			}
 		}
 	}

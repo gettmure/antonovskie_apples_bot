@@ -1,6 +1,7 @@
 package tgclient
 
 import (
+	"antonovskie_apples_bot/complimentr"
 	"sync/atomic"
 )
 
@@ -8,7 +9,7 @@ func handleGetMeResponse(response *GetMeResponse) {
 	logGetMe(response)
 }
 
-func handleUpdateResponse(bot *telegramBot, update UpdateResponse) {
+func handleUpdateResponse(bot *telegramBot, complimentr complimentr.Complimentr, update UpdateResponse) {
 	if bot.lastUpdateId == update.UpdateId {
 		return
 	}
@@ -24,10 +25,10 @@ func handleUpdateResponse(bot *telegramBot, update UpdateResponse) {
 
 	switch update.Message.Text {
 	case "/start":
-		handleStartCommand(bot, update.Message.Chat.Id)
+		handleStartCommand(bot, complimentr, update.Message.Chat.Id)
 	case "/story":
 		handleStoryCommand(bot, update.Message.Chat.Id)
 	case "/compliment":
-		handleComplimentCommand(bot, update.Message.Chat.Id)
+		handleComplimentCommand(bot, complimentr, update.Message.Chat.Id)
 	}
 }

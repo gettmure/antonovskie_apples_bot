@@ -1,55 +1,32 @@
 package complimentr
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
+	"log"
+	"strings"
 )
 
-// https://complimentr.com/
-type ComplimentrClient interface {
-	GetCompliment() (*ComplimentResponse, error)
+type Complimentr interface {
+	GetCompliment() (*string, error)
 }
 
-type complimentrClient struct {
-	httpClient http.Client
+type complimentr struct {
+	client ApiClient
 }
 
-func InitClient() ComplimentrClient {
-	return &complimentrClient{httpClient: http.Client{}}
+func InitComplimentr(client ApiClient) Complimentr {
+	return &complimentr{client: client}
 }
 
-func (c *complimentrClient) GetCompliment() (*ComplimentResponse, error) {
-	response, err := c.getComplimentResponse()
+func (c *complimentr) GetCompliment() (*string, error) {
+	response, err := c.client.GetCompliment()
 	if err != nil {
+		log.Println(err)
+
 		return nil, err
 	}
 
-	return response, nil
-}
+	compliment := fmt.Sprintf("%s! 🍎🍏❤️", strings.Title(response.Compliment))
 
-func (c *complimentrClient) getComplimentResponse() (*ComplimentResponse, error) {
-	response, err := c.httpClient.Get("https://complimentr.com/api")
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Failed to fetch response: code: %d, body: %s", response.StatusCode, body)
-	}
-
-	var data ComplimentResponse
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		return nil, err
-	}
-
-	return &data, nil
+	return &compliment, nil
 }

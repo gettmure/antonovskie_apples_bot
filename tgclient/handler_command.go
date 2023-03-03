@@ -9,32 +9,34 @@ import (
 
 const errorMessage = "Блин-блинский, я сломался :("
 
-func handleStartCommand(bot *telegramBot, chatId int64) {
+func handleStartCommand(bot *telegramBot, complimentr complimentr.Complimentr, chatId int64) {
 	message := "Привет, солнышко!🍎🍏❤️\n\n" +
 		"Я - 🍎🍏❤️-бот (антоновские яблоки бот). Я написан для того, чтобы радовать тебя в любые моменты жизни! :)\n\n" +
 		"Я - очень чуткий и милый бот, поэтому буду радовать тебя прекрасными словами. " +
 		"Правда пока что я умею это делать только на английском языке, но я обязательно научусь и на русском!!!\n\n" +
 		"Сейчас я хочу сказать про тебя вот что: %s!\n\n"
 
-	compliment, err := complimentr.InitClient().GetCompliment()
+	compliment, err := complimentr.GetCompliment()
 	if err != nil {
 		log.Println("complimentr failed for /start command", err)
 		bot.SendMessage(fmt.Sprintf(message, errorMessage), chatId)
+
+		return
 	}
 
-	bot.SendMessage(fmt.Sprintf(message, compliment.Compliment), chatId)
+	bot.SendMessage(fmt.Sprintf(message, *compliment), chatId)
 }
 
-func handleComplimentCommand(bot *telegramBot, chatId int64) {
-	compliment, err := complimentr.InitClient().GetCompliment()
+func handleComplimentCommand(bot *telegramBot, complimentr complimentr.Complimentr, chatId int64) {
+	compliment, err := complimentr.GetCompliment()
 	if err != nil {
-		log.Println(err)
+		log.Println("complimentr failed for /compliment command", err)
 		bot.SendMessage(errorMessage, chatId)
 
 		return
 	}
 
-	message := fmt.Sprintf("%s! 🍎🍏❤️", strings.Title(compliment.Compliment))
+	message := fmt.Sprintf("%s! 🍎🍏❤️", strings.Title(*compliment))
 	bot.SendMessage(message, chatId)
 }
 
