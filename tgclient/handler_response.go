@@ -25,5 +25,7 @@ func handleUpdateResponse(bot *telegramBot, update UpdateResponse) {
 	switch update.Message.Text {
 	case "/start":
 		handleStartMessage(bot, update.Message.Chat.Id)
+	case "/story":
+		handleStoryMessage(bot, update.Message.Chat.Id)
 	}
 }
