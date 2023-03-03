@@ -12,6 +12,7 @@ func logGetMe(getMe *GetMeResponse) {
 func logUpdate(update *UpdateResponse) {
 	fmt.Println("Received update:")
 	fmt.Println("- update id:", update.UpdateId)
+	fmt.Println("- chat id:", update.Message.Chat.Id)
 	fmt.Println("- message id:", update.Message.MessageId)
 	fmt.Println("- message text:", update.Message.Text)
 }

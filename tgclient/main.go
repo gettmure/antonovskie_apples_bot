@@ -9,6 +9,7 @@ import (
 
 type TelegramBot interface {
 	ListenUpdates(ctx context.Context, wg *sync.WaitGroup)
+	SendMessage(message string, chatId int64) *MessageResponse
 }
 
 type telegramBot struct {
@@ -39,13 +40,26 @@ func (bot *telegramBot) ListenUpdates(ctx context.Context, wg *sync.WaitGroup) {
 
 			return
 		case <-ticker.C:
-			updates, err := bot.client.GetUpdates(bot.token, -1)
+			response, err := bot.client.GetUpdates(bot.token, bot.lastUpdateId)
 			if err != nil {
 				log.Println(err)
 				continue
 			}
 
-			handleUpdateResponse(&bot.lastUpdateId, updates)
+			for _, update := range response.Result {
+				handleUpdateResponse(bot, update)
+			}
 		}
 	}
+}
+
+func (bot *telegramBot) SendMessage(message string, chatId int64) *MessageResponse {
+	response, err := bot.client.SendMessage(bot.token, message, chatId)
+	if err != nil {
+		log.Println(err)
+
+		return nil
+	}
+
+	return response
 }

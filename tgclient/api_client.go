@@ -1,6 +1,7 @@
 package tgclient
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,8 +9,9 @@ import (
 )
 
 type ApiClient interface {
-	GetMe(token string) (*GetMeResponse, error)                       // https://core.telegram.org/bots/api#getme
-	GetUpdates(token string, offset int) (*GetUpdatesResponse, error) // https://core.telegram.org/bots/api#getupdates
+	GetMe(token string) (*GetMeResponse, error)                                    // https://core.telegram.org/bots/api#getme
+	GetUpdates(token string, offset int64) (*GetUpdatesResponse, error)            // https://core.telegram.org/bots/api#getupdates
+	SendMessage(token string, text string, chatId int64) (*MessageResponse, error) // https://core.telegram.org/bots/api#sendmessage
 }
 
 type apiClient struct {
@@ -30,6 +32,24 @@ func (c *apiClient) GetMe(token string) (*GetMeResponse, error) {
 	return response, nil
 }
 
+func (c *apiClient) GetUpdates(token string, offset int64) (*GetUpdatesResponse, error) {
+	response, err := c.getUpdates(token, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
+func (c *apiClient) SendMessage(token string, text string, chatId int64) (*MessageResponse, error) {
+	response, err := c.sendMessage(token, text, chatId)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
 func (c *apiClient) getMe(token string) (*GetMeResponse, error) {
 	url := getApiUrl(token, "getMe", nil)
 
@@ -45,7 +65,7 @@ func (c *apiClient) getMe(token string) (*GetMeResponse, error) {
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Failed to fetch response: code: %d, body: %s", response.StatusCode, body)
+		return nil, fmt.Errorf("getMe failed: code: %d, body: %s", response.StatusCode, body)
 	}
 
 	var data GetMeResponse
@@ -57,16 +77,7 @@ func (c *apiClient) getMe(token string) (*GetMeResponse, error) {
 	return &data, nil
 }
 
-func (c *apiClient) GetUpdates(token string, offset int) (*GetUpdatesResponse, error) {
-	resp, err := c.getUpdates(token, offset)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
-func (c *apiClient) getUpdates(token string, offset int) (*GetUpdatesResponse, error) {
+func (c *apiClient) getUpdates(token string, offset int64) (*GetUpdatesResponse, error) {
 	query := map[string]string{"offset": fmt.Sprint(offset)}
 	url := getApiUrl(token, "getUpdates", &query)
 
@@ -82,10 +93,43 @@ func (c *apiClient) getUpdates(token string, offset int) (*GetUpdatesResponse, e
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Failed to fetch response: code: %d, body: %s", response.StatusCode, body)
+		return nil, fmt.Errorf("getUpdates failed: code: %d, body: %s", response.StatusCode, body)
 	}
 
 	var data GetUpdatesResponse
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return &data, nil
+}
+
+func (c *apiClient) sendMessage(token string, text string, chatId int64) (*MessageResponse, error) {
+	url := getApiUrl(token, "sendMessage", nil)
+
+	sendMessageData := &SendMessageData{ChatId: chatId, Text: text}
+	request, err := json.Marshal(sendMessageData)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := http.Post(url, "application/json", bytes.NewBuffer(request))
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("sendMessage failed: code: %d, body: %s", response.StatusCode, body)
+	}
+
+	var data MessageResponse
 	err = json.Unmarshal(body, &data)
 	if err != nil {
 		return nil, err

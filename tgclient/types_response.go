@@ -29,6 +29,11 @@ type UpdateResponse struct {
 }
 
 type MessageResponse struct {
-	MessageId int64  `json:"message_id"`
-	Text      string `json:"text"`
+	MessageId int64        `json:"message_id"`
+	Text      string       `json:"text"`
+	Chat      ChatResponse `json:"chat"`
+}
+
+type ChatResponse struct {
+	Id int64 `json:"id"`
 }

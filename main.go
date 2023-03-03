@@ -27,7 +27,7 @@ func main() {
 
 	token := os.Getenv("TG_BOT_TOKEN")
 	if len(token) < 1 {
-		log.Fatalln("Empty token")
+		log.Fatalln("Empty tg bot token")
 	}
 
 	client := tgclient.InitClient()
