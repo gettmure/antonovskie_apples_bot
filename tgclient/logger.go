@@ -7,6 +7,7 @@ func logGetMe(getMe *GetMeResponse) {
 	fmt.Println("- id:", getMe.Result.Id)
 	fmt.Println("- public name:", getMe.Result.Firstname)
 	fmt.Println("- username:", getMe.Result.Username)
+	fmt.Print("\nBot is ready to handle updates!\n\n")
 }
 
 func logUpdate(update *UpdateResponse) {
