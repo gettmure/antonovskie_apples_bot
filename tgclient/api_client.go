@@ -9,9 +9,10 @@ import (
 )
 
 type ApiClient interface {
-	GetMe(token string) (*GetMeResponse, error)                                    // https://core.telegram.org/bots/api#getme
-	GetUpdates(token string, offset int64) (*GetUpdatesResponse, error)            // https://core.telegram.org/bots/api#getupdates
-	SendMessage(token string, text string, chatId int64) (*MessageResponse, error) // https://core.telegram.org/bots/api#sendmessage
+	GetMe(token string) (*GetMeResponse, error)                                                    // https://core.telegram.org/bots/api#getme
+	GetUpdates(token string, offset int64) (*GetUpdatesResponse, error)                            // https://core.telegram.org/bots/api#getupdates
+	SendMessage(token string, text string, chatId int64) (*MessageResponse, error)                 // https://core.telegram.org/bots/api#sendmessage
+	SendAudio(token string, fileId string, chatId int64, caption string) (*MessageResponse, error) // https://core.telegram.org/bots/api#sendmessage
 }
 
 type apiClient struct {
@@ -43,6 +44,15 @@ func (c *apiClient) GetUpdates(token string, offset int64) (*GetUpdatesResponse,
 
 func (c *apiClient) SendMessage(token string, text string, chatId int64) (*MessageResponse, error) {
 	response, err := c.sendMessage(token, text, chatId)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
+func (c *apiClient) SendAudio(token string, audioId string, chatId int64, caption string) (*MessageResponse, error) {
+	response, err := c.sendAudio(token, audioId, chatId, caption)
 	if err != nil {
 		return nil, err
 	}
@@ -127,6 +137,39 @@ func (c *apiClient) sendMessage(token string, text string, chatId int64) (*Messa
 
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("sendMessage failed: code: %d, body: %s", response.StatusCode, body)
+	}
+
+	var data MessageResponse
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return &data, nil
+}
+
+func (c *apiClient) sendAudio(token string, audioId string, chatId int64, caption string) (*MessageResponse, error) {
+	url := getApiUrl(token, "sendAudio", nil)
+
+	sendAudioData := &SendAudioData{ChatId: chatId, AudioId: audioId, Caption: caption}
+	request, err := json.Marshal(sendAudioData)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := http.Post(url, "application/json", bytes.NewBuffer(request))
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("sendAudio failed: code: %d, body: %s", response.StatusCode, body)
 	}
 
 	var data MessageResponse

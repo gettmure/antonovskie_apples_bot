@@ -29,11 +29,17 @@ type UpdateResponse struct {
 }
 
 type MessageResponse struct {
-	MessageId int64        `json:"message_id"`
-	Text      string       `json:"text"`
-	Chat      ChatResponse `json:"chat"`
+	MessageId int64          `json:"message_id"`
+	Text      string         `json:"text"`
+	Chat      ChatResponse   `json:"chat"`
+	Audio     *AudioResponse `json:"audio"`
 }
 
 type ChatResponse struct {
 	Id int64 `json:"id"`
+}
+
+type AudioResponse struct {
+	FileId       string `json:"file_id"`
+	FileUniqueId string `json:"file_unique_id"`
 }

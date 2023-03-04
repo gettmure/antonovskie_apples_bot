@@ -11,6 +11,7 @@ import (
 type TelegramBot interface {
 	ListenUpdates(ctx context.Context, wg *sync.WaitGroup)
 	SendMessage(message string, chatId int64) *MessageResponse
+	SendAudio(audioId string, chatId int64, caption string) *MessageResponse
 }
 
 type telegramBot struct {
@@ -59,6 +60,17 @@ func (bot *telegramBot) ListenUpdates(ctx context.Context, wg *sync.WaitGroup) {
 
 func (bot *telegramBot) SendMessage(message string, chatId int64) *MessageResponse {
 	response, err := bot.client.SendMessage(bot.token, message, chatId)
+	if err != nil {
+		log.Println(err)
+
+		return nil
+	}
+
+	return response
+}
+
+func (bot *telegramBot) SendAudio(audioId string, chatId int64, caption string) *MessageResponse {
+	response, err := bot.client.SendAudio(bot.token, audioId, chatId, caption)
 	if err != nil {
 		log.Println(err)
 

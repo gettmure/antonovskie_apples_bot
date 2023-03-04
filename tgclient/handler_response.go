@@ -30,5 +30,7 @@ func handleUpdateResponse(bot *telegramBot, complimentr complimentr.Complimentr,
 		handleStoryCommand(bot, update.Message.Chat.Id)
 	case "/compliment":
 		handleComplimentCommand(bot, complimentr, update.Message.Chat.Id)
+	case "/track":
+		handleTrackCommand(bot, update.Message.Chat.Id)
 	}
 }

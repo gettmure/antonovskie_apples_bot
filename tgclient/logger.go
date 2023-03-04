@@ -16,4 +16,9 @@ func logUpdate(update *UpdateResponse) {
 	fmt.Println("- chat id:", update.Message.Chat.Id)
 	fmt.Println("- message id:", update.Message.MessageId)
 	fmt.Println("- message text:", update.Message.Text)
+
+	if update.Message.Audio != nil {
+		fmt.Println("- audio file id:", update.Message.Audio.FileId)
+		fmt.Println("- audio file unique id:", update.Message.Audio.FileUniqueId)
+	}
 }
