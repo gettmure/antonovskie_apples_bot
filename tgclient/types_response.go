@@ -33,6 +33,7 @@ type MessageResponse struct {
 	Text      string         `json:"text"`
 	Chat      ChatResponse   `json:"chat"`
 	Audio     *AudioResponse `json:"audio"`
+	From      *FromResponse  `json:"from"`
 }
 
 type ChatResponse struct {
@@ -42,4 +43,10 @@ type ChatResponse struct {
 type AudioResponse struct {
 	FileId       string `json:"file_id"`
 	FileUniqueId string `json:"file_unique_id"`
+}
+
+type FromResponse struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Username  string `json:"username"`
 }

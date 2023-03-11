@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -36,10 +35,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	bot.ListenUpdates(ctx, &wg)
-	wg.Wait()
+	bot.ListenUpdates(ctx)
 }
 
 func start() {
