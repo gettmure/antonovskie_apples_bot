@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -46,7 +48,13 @@ func start() {
 }
 
 func initEnv() {
-	err := godotenv.Load(".env")
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		log.Fatalln("Unable to identify current directory (needed to load .env)")
+	}
+
+	basepath := filepath.Dir(file)
+	err := godotenv.Load(filepath.Join(basepath, ".env"))
 	if err != nil {
 		log.Fatalln(err)
 	}
